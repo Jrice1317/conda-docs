@@ -13,6 +13,9 @@ Miniconda Release Notes
 {{ release.notes }}
 {%- endif %}
 
+{% if not release.package_lists -%}
+{%- else -%}
+
 Available Python Versions
 --------------------------
 
@@ -32,4 +35,5 @@ Packages
 {%- endfor -%}
 
 {%- endfor -%}
+{%- endif %}
 {% endfor %}
