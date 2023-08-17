@@ -51,6 +51,22 @@ def get_package_list(dists: list[str]) -> list[dict[str, str]]:
     return packages
 
 
+def get_common_packages(release_info: list[dict]) -> dict:
+    common_packages = {}
+    for release in release_info:
+        for platform, package_list in release["package_lists"].items():
+            for package in package_list:
+                package_name = package["name"]
+                version = package["version"]
+                package_key = f"{package_name}-{version}"
+                
+                if package_key not in common_packages:
+                    common_packages[package_key] = []
+                if platform not in common_packages[package_key]:
+                    common_packages[package_key].append(platform)
+    common_packages = {pkg_key: platforms for pkg_key, platforms in common_packages.items()}
+    return common_packages
+
 def get_installer_info(release: Path, files_info: dict) -> dict:
     """
     Process _info.json files output by constructor to get installer information,
@@ -99,11 +115,18 @@ def main():
     for release in releases:
         release_info.append(get_installer_info(RELEASE_DIR / release, files_info))
     
+    common_packages = get_common_packages(release_info)
+
     with open(RELEASE_NOTES_TEMPLATE) as f:
         template_text = f.read()
     
     template = Template(template_text)
-    rst_text = template.render(release_info=release_info)
+    rst_text = template.render(release_info=release_info, common_packages=common_packages)
+                               
+    common_packages = get_common_packages(release_info)
+    print("Packages that exist on platforms:")
+    for pkg_key, platforms in common_packages.items():
+        print(pkg_key, platforms)
 
     with open(RELEASE_NOTES_RST, "w") as f:
         f.write(rst_text)
