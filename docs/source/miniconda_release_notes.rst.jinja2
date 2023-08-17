@@ -24,15 +24,19 @@ Available Python Versions
 
 Packages
 --------
+.. tab-set::
+    {%- for platform, packages in release.package_lists|dictsort %}
+        .. tab-item:: {{ platform }} Installers
+            #. This is a test
 
-{%- for platform, packages in release.package_lists|dictsort %}
+            .. code-block:: shell
 
-**{{ platform }}**
+            **{{ platform }}**
 
-{% for package in packages|sort(attribute="name") %}
-* {{ package.name }} {{ package.version }}
-{%- endfor -%}
+            {% for package in packages|sort(attribute="name") %}
+            * {{ package.name }} {{ package.version }}
+            {%- endfor -%}
 
-{%- endfor -%}
+    {%- endfor -%}
 {%- endif %}
 {% endfor %}
