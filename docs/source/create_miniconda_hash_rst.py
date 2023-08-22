@@ -12,15 +12,11 @@ import os
 import time
 from packaging.version import Version
 from pathlib import Path
-
-# Column lengths
-FILENAME_LEN = 47
-SIZE_LEN = 9
-TIMEMOD_LEN = 19
-HASH_LEN = 68
+from jinja2 import Template
 
 HERE = Path(__file__).parent
 OUT_FILENAME = HERE / "miniconda-hashes.rst"
+TEMPLATE_FILENAME = HERE / "miniconda-hashes.rst.jinja2"
 
 
 def sizeof_fmt(num, suffix="B"):
@@ -46,41 +42,22 @@ def main():
     data.pop("index.json")
     data = {k: v for k, v in data.items() if "latest" not in k and "uninstaller" not in k}
 
-    # write file with hashes for all files
-    f = open(OUT_FILENAME, "w")
-    f.write(":orphan:\n\n")
-    title = "Miniconda hash information"
-    f.write("=" * len(title) + "\n" + title + "\n" + "=" * len(title) + "\n\n")
-    f.write(
-        "=" * FILENAME_LEN
-        + "   "
-        + "=" * SIZE_LEN
-        + "   "
-        + "=" * TIMEMOD_LEN
-        + "  "
-        + "=" * HASH_LEN
-        + "\n"
-    )
-    f.write(
-        "Name".ljust(FILENAME_LEN)
-        + "   "
-        + "Size".ljust(SIZE_LEN)
-        + "   "
-        + "Time modified".ljust(TIMEMOD_LEN)
-        + "  "
-        + "SHA256 hash".ljust(HASH_LEN)
-        + "\n"
-    )
-    f.write(
-        "=" * FILENAME_LEN
-        + "   "
-        + "=" * SIZE_LEN
-        + "   "
-        + "=" * TIMEMOD_LEN
-        + "  "
-        + "=" * HASH_LEN
-        + "\n"
-    )
+    # Load the Jinja template
+    with open(TEMPLATE_FILENAME, "r") as template_file:
+        template_content = template_file.read()
+        template = Template(template_content)
+
+    # Generate data for the template
+    template_data = {
+        "title": "Miniconda hash information",
+        # "title_len": len(template_data["title"]),
+        # "filename_len": FILENAME_LEN,
+        # "size_len": SIZE_LEN,
+        # "timemod_len": TIMEMOD_LEN,
+        # "hash_len": HASH_LEN,
+        "items": []
+    }
+
 
     def sorting_key(filename):
         """
@@ -110,9 +87,12 @@ def main():
 
         return (Version(conda_version_platform_ext), miniconda_prefix, py_version)
 
+
     # We sort the 'data' dict by our special sorting_key() function,
     # which accounts for all the ways our Miniconda installers have
     # changed their naming format over the years.
+
+    # Populate template_data["items"] list
     for filename in sorted(data, reverse=True, key=sorting_key):
         last_modified = datetime.datetime.fromtimestamp(
             math.floor(data[filename]["mtime"])
@@ -123,27 +103,22 @@ def main():
         if "sha256" not in data[filename]:
             print("WARNING: no sha256 information for:", filename)
             continue
-        f.write(
-            filename.ljust(FILENAME_LEN)
-            + "   "
-            + sizeof_fmt(data[filename]["size"]).rjust(SIZE_LEN)
-            + "   "
-            + last_mod_str.ljust(TIMEMOD_LEN)
-            + "  "
-            + "``"
-            + str(data[filename]["sha256"])
-            + "``\n"
+        template_data["items"].append(
+            {
+                "filename": filename,
+                "size": sizeof_fmt(data[filename]["size"]),
+                "last_modified": last_mod_str,
+                "sha256": data[filename]["sha256"]
+            }
         )
-    f.write(
-        "=" * FILENAME_LEN
-        + "   "
-        + "=" * SIZE_LEN
-        + "   "
-        + "=" * TIMEMOD_LEN
-        + "  "
-        + "=" * HASH_LEN
-        + "\n"
-    )
+
+
+    # Render the template with the data
+    rst_text = template.render(template_data=template_data, items=template_data["items"])
+
+    # Write the rendered content to the output RST file
+    with open(OUT_FILENAME, "w") as rst_file:
+        rst_file.write(rst_text) 
 
 
 if __name__ == "__main__":
