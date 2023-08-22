@@ -1,0 +1,22 @@
+{%- for data in template_data -%}
+
+{{ "=" * template_data.title|length }}
+{{ template_data.title }}
+{{ "=" * template_data.title|length }}
+
+.. list-table::
+    :widths: 47 9 19 68
+    :header-rows: 1
+
+    * - Name
+      - Size
+      - Time modified
+      - SHA256 hash
+
+    {% for item in items %}
+    * - {{ item["filename"] }}
+      - {{ item["size"] }}
+      - {{ item["last_modified"] }}
+      - ``{{ item["sha256"] }}``
+    {% endfor %}
+{%- endfor -%}
