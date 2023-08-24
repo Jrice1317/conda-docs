@@ -50,11 +50,6 @@ def main():
     # Generate data for the template
     template_data = {
         "title": "Miniconda hash information",
-        # "title_len": len(template_data["title"]),
-        # "filename_len": FILENAME_LEN,
-        # "size_len": SIZE_LEN,
-        # "timemod_len": TIMEMOD_LEN,
-        # "hash_len": HASH_LEN,
         "items": []
     }
 
